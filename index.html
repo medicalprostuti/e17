@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "We work every day except Friday. What part of speech is 'except'?",
+          options: {
+            a: "adjective",
+            b: "conjunction",
+            c: "adverb",
+            d: "preposition",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'except' is used to show an exclusion, indicating 'but not Friday'. It introduces a phrase that specifies what is excluded from the general statement, functioning as a preposition.",
+        },
+        {
+          id: 2,
+          question: "What is the verb of 'Success'?",
+          options: {
+            a: "Succeeder",
+            b: "Successive",
+            c: "Succeed",
+            d: "Success",
+          },
+          correct: "c",
+          explanation:
+            "'Success' is a noun. The verb form is 'Succeed', meaning to achieve a desired outcome.",
+        },
+        {
+          id: 3,
+          question: "How fast the boy runs! The underlined word is an-",
+          options: {
+            a: "Noun",
+            b: "Verb",
+            c: "Objective",
+            d: "Adverb",
+          },
+          correct: "d",
+          explanation:
+            "The underlined word is 'fast'. It modifies the verb 'runs', telling us how the boy runs. Therefore, it is an adverb.",
+        },
+        {
+          id: 4,
+          question: "What is the verb of 'Short'/'Shortly'?",
+          options: {
+            a: "Enshort",
+            b: "Shorten",
+            c: "Shorted",
+            d: "Shorting",
+          },
+          correct: "b",
+          explanation:
+            "'Short' is an adjective, and 'Shortly' is an adverb. The verb form meaning 'to make or become short' is 'Shorten'.",
+        },
+        {
+          id: 5,
+          question: "The word 'Unparallel' is-",
+          options: {
+            a: "A noun",
+            b: "An adverb",
+            c: "A verb",
+            d: "An adjective",
+          },
+          correct: "d",
+          explanation:
+            "'Unparallel' means without parallel, unmatched, or unequaled. It describes a quality of something, thus functioning as an adjective.",
+        },
+        {
+          id: 6,
+          question: "The verb of the word 'Response' is-",
+          options: {
+            a: "Responsible",
+            b: "Responsibility",
+            c: "Respond",
+            d: "Respondent",
+          },
+          correct: "c",
+          explanation:
+            "'Response' is a noun. The verb form is 'Respond', meaning to answer or react.",
+        },
+        {
+          id: 7,
+          question:
+            "The day of my sister's marriage is drawing near. Here 'near' is a/an-",
+          options: {
+            a: "adjective",
+            b: "verb",
+            c: "preposition",
+            d: "adverb",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'near' modifies the verb 'drawing', indicating how the day is approaching. Therefore, it functions as an adverb.",
+        },
+        {
+          id: 8,
+          question:
+            "Educating girls contribute to an increase of wealth through its impact on economic development. The underlined word is _",
+          options: {
+            a: "a verb",
+            b: "an adjective",
+            c: "a noun",
+            d: "an adverb",
+          },
+          correct: "c",
+          explanation:
+            "The underlined word is 'increase'. It is preceded by the article 'an' and refers to a quantity or growth, indicating it is a noun.",
+        },
+        {
+          id: 9,
+          question:
+            "The day of my sister's marriage is drawing _near_. The underlined word is a/an-",
+          options: {
+            a: "adjective",
+            b: "verb",
+            c: "preposition",
+            d: "adverb",
+          },
+          correct: "d",
+          explanation:
+            "The underlined word is 'near'. It describes the manner in which the day is 'drawing' (approaching), making it an adverb.",
+        },
+        {
+          id: 10,
+          question:
+            "'It has a gauge that tells you when you are running low on gases'. Which pair fits to label the underlined parts of the sentence?",
+          options: {
+            a: "adjective, adverb",
+            b: "noun, adverb",
+            c: "noun, adjective",
+            d: "adjective, adjective",
+          },
+          correct: "b",
+          explanation:
+            "The first underlined word is 'gauge'. It is a 'thing' that tells you something, making it a noun. The second underlined word is 'low'. It modifies the verb 'running', describing how you are running (in terms of gas quantity), so it is an adverb.",
+        },
+        {
+          id: 11,
+          question: "Which of the following words can be used as a verb?",
+          options: {
+            a: "mobile",
+            b: "sugar",
+            c: "media",
+            d: "sand",
+          },
+          correct: "d",
+          explanation:
+            "While 'mobile', 'sugar', and 'media' are primarily nouns (and 'mobile' can be an adjective), 'sand' can be used as a verb meaning 'to smooth or polish with sandpaper' (e.g., 'sand the floor'). 'Sugar' can sometimes be used as a verb to mean 'to sweeten', but 'sand' is more commonly used as a verb in a distinct action.",
+        },
+        {
+          id: 12,
+          question: "In which sentence 'Like' is used as a preposition?",
+          options: {
+            a: "He likes to eat fish",
+            b: "He laughs like his father does",
+            c: "He climbed the tree like a cat",
+            d: "Like-minded people are necessary to start a business",
+          },
+          correct: "c",
+          explanation:
+            "A preposition shows the relationship between a noun/pronoun and another word in the sentence. In (c), 'like' introduces the noun phrase 'a cat' and compares how he climbed the tree. In (a), 'likes' is a verb. In (b), 'like' is a conjunction (meaning 'as'). In (d), 'Like-minded' is a compound adjective.",
+        },
+        {
+          id: 13,
+          question:
+            "He died following the incident. The underlined word is a/an-",
+          options: {
+            a: "adjective",
+            b: "adverb",
+            c: "noun",
+            d: "preposition",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'following' means 'after' or 'as a result of' and introduces the noun phrase 'the incident'. It functions as a preposition.",
+        },
+        {
+          id: 14,
+          question: "The Word 'vital' is a/an-",
+          options: {
+            a: "noun",
+            b: "adverb",
+            c: "adjective",
+            d: "verb",
+          },
+          correct: "c",
+          explanation:
+            "'Vital' means absolutely necessary or important. It describes a quality or characteristic, thus functioning as an adjective.",
+        },
+        {
+          id: 15,
+          question:
+            "'He could not win but learnt a lot' Which part of speech is the word 'but'?",
+          options: {
+            a: "an adverb",
+            b: "a verb",
+            c: "an adjective",
+            d: "a conjunction",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'but' connects two independent clauses ('He could not win' and 'learnt a lot'). It functions as a coordinating conjunction, indicating a contrast.",
+        },
+        {
+          id: 16,
+          question: "What is the noun form of the word 'laugh'?",
+          options: {
+            a: "laughing",
+            b: "laughable",
+            c: "laughter",
+            d: "laughingly",
+          },
+          correct: "c",
+          explanation:
+            "'Laugh' can be a verb or a noun. The most common noun form referring to the act or sound of laughing is 'laughter'.",
+        },
+        {
+          id: 17,
+          question: "What is the adjective form of the word 'people'?",
+          options: {
+            a: "populous",
+            b: "popular",
+            c: "popularity",
+            d: "popularize",
+          },
+          correct: "a",
+          explanation:
+            "'People' is a noun. 'Populous' is an adjective meaning 'densely populated' or 'having a large population', directly related to people.",
+        },
+        {
+          id: 18,
+          question: "What is the antonym for the word 'deformation'?",
+          options: {
+            a: "distortion",
+            b: "contortion",
+            c: "wholeness",
+            d: "disfigurement",
+          },
+          correct: "c",
+          explanation:
+            "'Deformation' means the action or process of changing in shape or distorting. Its antonym would be 'wholeness', meaning the state of being complete and unbroken.",
+        },
+        {
+          id: 19,
+          question:
+            "\"Call me if you have any problems _regarding_ your work\". Here 'regarding' is a/an-",
+          options: {
+            a: "gerund",
+            b: "apposition",
+            c: "preposition",
+            d: "conjunction",
+          },
+          correct: "c",
+          explanation:
+            "In this sentence, 'regarding' means 'concerning' or 'about' and introduces the noun phrase 'your work'. It functions as a preposition.",
+        },
+        {
+          id: 20,
+          question: '"Come on, it\'s time to go _home_." Here "home" is a/an-',
+          options: {
+            a: "noun",
+            b: "verb",
+            c: "adjective",
+            d: "adverb",
+          },
+          correct: "d",
+          explanation:
+            "In this context, 'home' tells us where to go, modifying the verb 'go'. It functions as an adverb of place. (e.g., 'go there', 'go away').",
+        },
+        {
+          id: 21,
+          question:
+            '"I shall help you provided you obey me." Here the underlined word is a/an-',
+          options: {
+            a: "adverb",
+            b: "adjective",
+            c: "conjunction",
+            d: "verb",
+          },
+          correct: "c",
+          explanation:
+            "In this sentence, 'provided' functions as a subordinating conjunction, meaning 'on the condition that' or 'if', connecting the two clauses.",
+        },
+        {
+          id: 22,
+          question: "What is the noun form of the word 'know'?",
+          options: {
+            a: "knowing",
+            b: "knowledge",
+            c: "knowledgeable",
+            d: "known",
+          },
+          correct: "b",
+          explanation:
+            "'Know' is a verb. The noun form referring to facts, information, and skills acquired through experience or education is 'knowledge'.",
+        },
+        {
+          id: 23,
+          question: "\"Who's that?\" in this sentence 'that' is a/an-",
+          options: {
+            a: "Pronoun",
+            b: "Conjunction",
+            c: "Adjective",
+            d: "Adverb",
+          },
+          correct: "a",
+          explanation:
+            "In this interrogative sentence, 'that' is used to refer to a specific person or thing being identified, functioning as a demonstrative pronoun.",
+        },
+        {
+          id: 24,
+          question:
+            "'Please write to me at the _above_ address'. The word 'above' in this sentence is a/an-",
+          options: {
+            a: "noun",
+            b: "adjective",
+            c: "adverb",
+            d: "verb",
+          },
+          correct: "b",
+          explanation:
+            "In this sentence, 'above' modifies the noun 'address', telling us which address. Therefore, it acts as an adjective.",
+        },
+        {
+          id: 25,
+          question:
+            "In which sentence is the word 'past' used as a preposition?",
+          options: {
+            a: "Writing letters is a thing of the past.",
+            b: "I look back on the past without regret.",
+            c: "I called out to him as he ran past.",
+            d: "Tania was a wonderful singer, but she's past her prime.",
+          },
+          correct: "d",
+          explanation:
+            "A preposition shows the relationship between a noun/pronoun and another word. In (d), 'past' shows the state of being beyond 'her prime'. In (a) and (b), 'past' is a noun. In (c), 'past' is an adverb modifying 'ran'.",
+        },
+        {
+          id: 26,
+          question:
+            "\"The warning of the authority falls on deaf ears\". Here 'warning' does the function of _",
+          options: {
+            a: "adjective",
+            b: "verb",
+            c: "noun",
+            d: "adverb",
+          },
+          correct: "c",
+          explanation:
+            "In this sentence, 'warning' is the subject of the sentence and refers to a 'thing' (a notice or caution). Therefore, it functions as a noun.",
+        },
+        {
+          id: 27,
+          question:
+            "'There was a small reception _following_ the wedding' the word 'following' in the sentence above is a/an _",
+          options: {
+            a: "adjective",
+            b: "adverb",
+            c: "noun",
+            d: "preposition",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'following' means 'after' and introduces the noun phrase 'the wedding', indicating a temporal relationship. Thus, it acts as a preposition.",
+        },
+        {
+          id: 28,
+          question:
+            "The sun went _down_. The underlined word is used here as a/an -",
+          options: {
+            a: "preposition",
+            b: "adverb",
+            c: "noun",
+            d: "conjunction",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'down'. It modifies the verb 'went', telling us the direction of the action. Therefore, it is an adverb.",
+        },
+        {
+          id: 29,
+          question:
+            "The mother sat _vigilantly_ beside the sick baby. Here 'vigilantly' is-",
+          options: {
+            a: "a noun",
+            b: "an adverb",
+            c: "an adjective",
+            d: "none of the three",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'vigilantly'. It ends in '-ly' and modifies the verb 'sat', describing how the mother sat. Therefore, it is an adverb.",
+        },
+        {
+          id: 30,
+          question:
+            "The mother sat vigilantly beside the sick baby. Here 'vigilantly' is-",
+          options: {
+            a: "a noun",
+            b: "an adverb",
+            c: "an adjective",
+            d: "none of the three",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'vigilantly'. It ends in '-ly' and modifies the verb 'sat', describing how the mother sat. Therefore, it is an adverb. (Duplicate question, same explanation).",
+        },
+        {
+          id: 31,
+          question: "Frailty, thy name is women. Here 'Frailty' is:",
+          options: {
+            a: "noun",
+            b: "adjective",
+            c: "pronoun",
+            d: "adverb",
+          },
+          correct: "a",
+          explanation:
+            "'Frailty' is a noun, referring to the quality of being delicate or weak.",
+        },
+        {
+          id: 32,
+          question: "Verb of 'Number' is -",
+          options: {
+            a: "Number",
+            b: "Enumerate",
+            c: "Numbering",
+            d: "Numerical",
+          },
+          correct: "b",
+          explanation:
+            "While 'Number' can be a noun or verb (to assign a number), 'Enumerate' is a more formal verb meaning to list or count. 'Numbering' is a present participle/gerund, and 'Numerical' is an adjective.",
+        },
+        {
+          id: 33,
+          question:
+            "Depression is often _hereditary_. The underlined word is a/an-",
+          options: {
+            a: "Noun",
+            b: "Adjective",
+            c: "Adverb",
+            d: "Verb",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'hereditary'. It describes a characteristic of 'Depression' (i.e., that it can be passed down through genes). Therefore, it is an adjective.",
+        },
+        {
+          id: 34,
+          question:
+            "I am in the process of collecting _material_ for my story. The underlined word is a/an-",
+          options: {
+            a: "Verb",
+            b: "Adjective",
+            c: "Adverb",
+            d: "Noun",
+          },
+          correct: "d",
+          explanation:
+            "The underlined word is 'material'. It refers to the 'stuff' or 'content' being collected for the story. Therefore, it functions as a noun.",
+        },
+        {
+          id: 35,
+          question:
+            '"He was a rather _disagreeable_ man." Here the underlined word is a/an-',
+          options: {
+            a: "Noun",
+            b: "Adjective",
+            c: "Adverb",
+            d: "Preposition",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'disagreeable'. It describes the quality of the 'man'. Therefore, it is an adjective.",
+        },
+        {
+          id: 36,
+          question: "Which is the noun of the word 'Beautiful'?",
+          options: {
+            a: "Beauty",
+            b: "Beautify",
+            c: "Beautious",
+            d: "Beautifully",
+          },
+          correct: "a",
+          explanation:
+            "'Beautiful' is an adjective. The noun form is 'Beauty'.",
+        },
+        {
+          id: 37,
+          question: 'What is the noun of the word "Waste"?',
+          options: {
+            a: "Waste",
+            b: "Wasting",
+            c: "Wastage",
+            d: "Wasteful",
+          },
+          correct: "c",
+          explanation:
+            "While 'Waste' can be a noun, 'Wastage' is a specific noun form referring to the action or amount of wasting.",
+        },
+        {
+          id: 38,
+          question: "The noun form of 'wide' is -",
+          options: {
+            a: "wideth",
+            b: "widoth",
+            c: "widen",
+            d: "width",
+          },
+          correct: "d",
+          explanation:
+            "'Wide' is an adjective. The noun form is 'width', referring to the extent from side to side.",
+        },
+        {
+          id: 39,
+          question: "I walked for a while. Here 'while' is a/an-",
+          options: {
+            a: "verb",
+            b: "adverb",
+            c: "conjunction",
+            d: "noun",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'a while' refers to a period of time, functioning as a noun phrase. 'While' itself acts as a noun within this phrase.",
+        },
+        {
+          id: 40,
+          question: "Find out the adverb of the 'awe'-",
+          options: {
+            a: "Awfully",
+            b: "Awesome",
+            c: "Aweful",
+            d: "Awefulness",
+          },
+          correct: "a",
+          explanation:
+            "'Awe' can be a noun or a verb. 'Awfully' is the adverb form (often meaning 'terribly' or 'very'). 'Awesome' and 'Aweful' are adjectives, and 'Awefulness' is a noun.",
+        },
+        {
+          id: 41,
+          question: "What is the adjective of 'break'?",
+          options: {
+            a: "Breaker",
+            b: "Breaking",
+            c: "Breach",
+            d: "Breakable",
+          },
+          correct: "d",
+          explanation:
+            "'Break' is a verb. 'Breakable' is an adjective meaning 'able to be broken'.",
+        },
+        {
+          id: 42,
+          question:
+            "In the sentence 'I know better', the word 'better' is a/an -",
+          options: {
+            a: "adjective",
+            b: "noun",
+            c: "adverb",
+            d: "preposition",
+          },
+          correct: "c",
+          explanation:
+            "In this sentence, 'better' modifies the verb 'know', telling us how well (or in what manner) the speaker knows. It is the comparative form of 'well', which is an adverb.",
+        },
+        {
+          id: 43,
+          question: "What is the noun of the verb 'Depart'?",
+          options: {
+            a: "Departed",
+            b: "Department",
+            c: "Departing",
+            d: "Departure",
+          },
+          correct: "d",
+          explanation:
+            "'Depart' is a verb. The noun form, referring to the act of leaving, is 'Departure'.",
+        },
+        {
+          id: 44,
+          question: "Which one is not an adjective?",
+          options: {
+            a: "immigration",
+            b: "meritorious",
+            c: "collective",
+            d: "material",
+          },
+          correct: "a",
+          explanation:
+            "'Immigration' is a noun (the action of coming to live permanently in a foreign country). 'Meritorious', 'collective', and 'material' can all be adjectives.",
+        },
+        {
+          id: 45,
+          question:
+            "He is a person of no importance. Here 'no importance' is a/an _",
+          options: {
+            a: "adjective",
+            b: "noun",
+            c: "adverb",
+            d: "preposition",
+          },
+          correct: "b",
+          explanation:
+            "The phrase 'no importance' acts as a noun phrase, describing the type of person. 'Importance' itself is a noun, and 'no' functions as a determiner modifying it.",
+        },
+        {
+          id: 46,
+          question:
+            "When I am online, I have liberty. The underlined word is a/an _.",
+          options: {
+            a: "adjective",
+            b: "adverb",
+            c: "noun",
+            d: "preposition",
+          },
+          correct: "c",
+          explanation:
+            "The underlined word is 'liberty'. It refers to a state or condition (freedom). Therefore, it functions as a noun.",
+        },
+        {
+          id: 47,
+          question:
+            "He never comes first because he hardly works hard. Here 'hard' is a/an-",
+          options: {
+            a: "adverb",
+            b: "pronoun",
+            c: "adjective",
+            d: "verb",
+          },
+          correct: "a",
+          explanation:
+            "In this sentence, 'hard' modifies the verb 'works', telling us how he works. Therefore, it is an adverb.",
+        },
+        {
+          id: 48,
+          question:
+            "Yet ensuring drinking water, cleanliness and hygiene was a big challenge. Here, 'Yet' is a/an-",
+          options: {
+            a: "adverb",
+            b: "conjunction",
+            c: "adjective",
+            d: "preposition",
+          },
+          correct: "b",
+          explanation:
+            "In this context, 'Yet' is used to connect two clauses (though the first is implied) and introduces a contrasting idea, functioning as a coordinating conjunction (similar to 'but').",
+        },
+        {
+          id: 49,
+          question:
+            "I felt extremely sorry for my misdeeds. The underlined word is an example of _",
+          options: {
+            a: "an intensifier",
+            b: "an infinitive",
+            c: "a gerund",
+            d: "a participle",
+          },
+          correct: "a",
+          explanation:
+            "The underlined word is 'extremely'. It intensifies the adjective 'sorry', indicating the degree to which the speaker felt sorry. Therefore, it is an intensifier (a type of adverb).",
+        },
+        {
+          id: 50,
+          question: "Which word does not have a verb form?",
+          options: {
+            a: "Trust",
+            b: "Organize",
+            c: "Fault",
+            d: "Suicide",
+          },
+          correct: "d",
+          explanation:
+            "'Trust' (verb: to trust), 'Organize' (verb: to organize), 'Fault' (verb: to find fault with). 'Suicide' is primarily a noun, and while one might say 'commit suicide', 'suicide' itself is not typically used as a verb.",
+        },
+        {
+          id: 51,
+          question:
+            "We ought to improve the condition of those who feel downtrodden. Here 'downtrodden' is a-",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Adjective",
+            d: "Verb",
+          },
+          correct: "c",
+          explanation:
+            "'Downtrodden' means oppressed or subjugated. It describes the state or condition of 'those' people, functioning as an adjective.",
+        },
+        {
+          id: 52,
+          question: "Please water the plants in my absence. Here 'water' is a-",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Adjective",
+            d: "Verb",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'water' is an action word, meaning to give water to the plants. Therefore, it functions as a verb.",
+        },
+        {
+          id: 53,
+          question:
+            "Identify the part of speech of the underlined word: Floods leave people _vulnerable_ to water-borne diseases.",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Preposition",
+            d: "Adjective",
+          },
+          correct: "d",
+          explanation:
+            "The underlined word is 'vulnerable'. It describes the state of 'people' (easily harmed or susceptible). Therefore, it is an adjective.",
+        },
+        {
+          id: 54,
+          question:
+            "Mr. Qureshi is a university Professor. Here 'university' is a-",
+          options: {
+            a: "Noun",
+            b: "Determiner",
+            c: "Noun adjective",
+            d: "Pronominal adjective",
+          },
+          correct: "c",
+          explanation:
+            "In this phrase, 'university' modifies 'Professor' by specifying the type of professor. Although 'university' is typically a noun, when it modifies another noun in this way, it functions as a noun acting as an adjective (or an attributive noun).",
+        },
+        {
+          id: 55,
+          question: 'The word "desperation" is a/an-',
+          options: {
+            a: "adjective",
+            b: "verb",
+            c: "adverb",
+            d: "noun",
+          },
+          correct: "d",
+          explanation:
+            "'Desperation' is a noun, referring to a state of despair, typically resulting in rash or extreme behavior.",
+        },
+        {
+          id: 56,
+          question: "Our blessings come from _above_. The underlined word is-",
+          options: {
+            a: "Verb",
+            b: "Adverb",
+            c: "Adjective",
+            d: "Noun",
+          },
+          correct: "b",
+          explanation:
+            "The underlined word is 'above'. It indicates the place from where the blessings come, modifying the verb 'come'. Therefore, it is an adverb of place.",
+        },
+        {
+          id: 57,
+          question: "The word 'Substantiate' is a/an _",
+          options: {
+            a: "Noun",
+            b: "Verb",
+            c: "Adjective",
+            d: "Adverb",
+          },
+          correct: "b",
+          explanation:
+            "'Substantiate' means to provide evidence to support or prove the truth of something. It is an action word, thus a verb.",
+        },
+        {
+          id: 58,
+          question: "What part of speech is 'rare'?",
+          options: {
+            a: "Adverb",
+            b: "Adjective",
+            c: "Preposition",
+            d: "Noun",
+          },
+          correct: "b",
+          explanation:
+            "'Rare' means not occurring very often or uncommon. It describes a quality or characteristic, thus functioning as an adjective.",
+        },
+        {
+          id: 59,
+          question: "Which one is the correct noun form of 'cost'?",
+          options: {
+            a: "Cost-effective",
+            b: "Cost",
+            c: "Costance",
+            d: "Costly",
+          },
+          correct: "b",
+          explanation:
+            "'Cost' itself can function as a noun, referring to the price or expenditure required for something.",
+        },
+        {
+          id: 60,
+          question: 'Which of the following is the antonym of "Derogatory"?',
+          options: {
+            a: "Blame",
+            b: "Opaque",
+            c: "Praise",
+            d: "Misery",
+          },
+          correct: "c",
+          explanation:
+            "'Derogatory' means expressing a low opinion of someone or something, disparaging. Its antonym is 'Praise', which expresses approval or admiration.",
+        },
+        {
+          id: 61,
+          question: "Which one of the following is a noun?",
+          options: {
+            a: "Aberrant",
+            b: "Deflect",
+            c: "Divergence",
+            d: "Divergent",
+          },
+          correct: "c",
+          explanation:
+            "'Divergence' is a noun, meaning the process or state of diverging. 'Aberrant' and 'Divergent' are adjectives, and 'Deflect' is a verb.",
+        },
+        {
+          id: 62,
+          question: 'The adjective of the word "heart" is -',
+          options: {
+            a: "Heart",
+            b: "Hearten",
+            c: "Heartening",
+            d: "Heartful",
+          },
+          correct: "c",
+          explanation:
+            "'Heart' is a noun. 'Heartening' is an adjective meaning 'making one feel more cheerful or hopeful'.",
+        },
+        {
+          id: 63,
+          question:
+            "Which of the following sentences has an interjection in it?",
+          options: {
+            a: "Well, it is time to say good bye.",
+            b: "He studied hard, yet he could not pass the test.",
+            c: "This is not what I meant.",
+            d: "Do you know where the playful penguins live?",
+          },
+          correct: "a",
+          explanation:
+            "An interjection is a word or phrase that expresses a strong feeling or emotion. In (a), 'Well' is used as an interjection to express a pause or mild surprise.",
+        },
+        {
+          id: 64,
+          question: "Choose the correct adverb.",
+          options: {
+            a: "prettily",
+            b: "pretty",
+            c: "prettify",
+            d: "prettier",
+          },
+          correct: "a",
+          explanation:
+            "'Prettily' is the adverb form (from the adjective 'pretty'), typically describing how something is done in a pleasing or attractive way. 'Pretty' is an adjective, 'prettify' is a verb, and 'prettier' is a comparative adjective.",
+        },
+        {
+          id: 65,
+          question: "The verb form of the word 'prison' is _",
+          options: {
+            a: "enprison",
+            b: "inprison",
+            c: "imprison",
+            d: "imprisonment",
+          },
+          correct: "c",
+          explanation:
+            "'Prison' is a noun. The verb form meaning 'to put or keep in prison or jail' is 'imprison'.",
+        },
+        {
+          id: 66,
+          question:
+            "'He had gone away before I came'. Here the word 'before' is a -",
+          options: {
+            a: "Adverb",
+            b: "Conjunction",
+            c: "Preposition",
+            d: "Adjective",
+          },
+          correct: "b",
+          explanation:
+            "In this sentence, 'before' connects two clauses ('He had gone away' and 'I came'), indicating a temporal relationship. Therefore, it functions as a subordinating conjunction.",
+        },
+        {
+          id: 67,
+          question:
+            "\"There is no mother but loves her child\". Here 'but' is-",
+          options: {
+            a: "conjunction",
+            b: "adjective",
+            c: "negative relative",
+            d: "adverb",
+          },
+          correct: "c",
+          explanation:
+            "In this specific construction ('no... but...'), 'but' functions as a negative relative pronoun, meaning 'who does not' or 'that does not'. It connects the clause 'loves her child' to 'no mother' and implies a negative condition.",
+        },
+        {
+          id: 68,
+          question:
+            "The doctor took the round in the hospital. Here 'round' is a/an-",
+          options: {
+            a: "Adjective",
+            b: "Noun",
+            c: "Verb",
+            d: "Adverb",
+          },
+          correct: "b",
+          explanation:
+            "In this sentence, 'round' refers to a specific tour or circuit taken (e.g., 'the doctor's rounds'). Therefore, it functions as a noun.",
+        },
+        {
+          id: 69,
+          question: "Select the sentence with a suffix that is an adverb?",
+          options: {
+            a: "The equation that was given to him was solvable",
+            b: "There was a structural defect in the monument",
+            c: "He spoke English fluently",
+            d: "The decoration of the gate was spectacular",
+          },
+          correct: "c",
+          explanation:
+            "In sentence (c), 'fluently' ends with the suffix '-ly' and modifies the verb 'spoke', indicating how he spoke. This is the characteristic form of an adverb.",
+        },
+        {
+          id: 70,
+          question: "What is the adjective form of the word 'Benefit'?",
+          options: {
+            a: "Beneficially",
+            b: "Beneficiary",
+            c: "Beneficial",
+            d: "Beneficent",
+          },
+          correct: "c",
+          explanation:
+            "'Benefit' can be a noun or a verb. 'Beneficial' is the adjective form, meaning 'resulting in good or advantageous'.",
+        },
+        {
+          id: 71,
+          question: "What is the noun of the word 'Conclude'?",
+          options: {
+            a: "Concluded",
+            b: "Conclusion",
+            c: "Conclusively",
+            d: "Conclusive",
+          },
+          correct: "b",
+          explanation:
+            "'Conclude' is a verb. The noun form is 'Conclusion', meaning the end or the logical outcome.",
+        },
+        {
+          id: 72,
+          question: "What is the noun form of the word 'Forget'?",
+          options: {
+            a: "Forgetfulness",
+            b: "Forgetful",
+            c: "Forgetfully",
+            d: "Forgotten",
+          },
+          correct: "a",
+          explanation:
+            "'Forget' is a verb. The noun form, referring to the state of being forgetful, is 'Forgetfulness'.",
+        },
+        {
+          id: 73,
+          question: "The word 'Wholesome' is _",
+          options: {
+            a: "Noun",
+            b: "Adjective",
+            c: "Adverb",
+            d: "Verb",
+          },
+          correct: "b",
+          explanation:
+            "'Wholesome' means conducive to moral or physical well-being; healthy. It describes a quality, thus functioning as an adjective.",
+        },
+        {
+          id: 74,
+          question: "I have told you twice. Here 'twice' is-",
+          options: {
+            a: "Adverb",
+            b: "Adjective",
+            c: "Noun",
+            d: "Preposition",
+          },
+          correct: "a",
+          explanation:
+            "In this sentence, 'twice' modifies the verb 'told', indicating how many times the action occurred. Therefore, it is an adverb of frequency.",
+        },
+        {
+          id: 75,
+          question: "The flight is leaving shortly. Here 'shortly' is-",
+          options: {
+            a: "a subject",
+            b: "an adverbial",
+            c: "a complement",
+            d: "an adjective",
+          },
+          correct: "b",
+          explanation:
+            "The word 'shortly' modifies the verb 'leaving', indicating when the flight is leaving (soon). Adverbials are words or phrases that function as adverbs in a sentence. Since 'shortly' is an adverb, it functions as an adverbial.",
+        },
+        {
+          id: 76,
+          question: "The teacher has repeated herself twice. Here 'twice' is-",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Adjective",
+            d: "Preposition",
+          },
+          correct: "b",
+          explanation:
+            "In this sentence, 'twice' modifies the verb 'repeated', indicating the number of times the action occurred. Therefore, it is an adverb of frequency.",
+        },
+        {
+          id: 77,
+          question: "Are you an early riser? Here 'early' is:",
+          options: {
+            a: "Verb",
+            b: "Adverb",
+            c: "Noun",
+            d: "Adjective",
+          },
+          correct: "d",
+          explanation:
+            "In this sentence, 'early' modifies the noun 'riser' (a person who rises), describing what kind of riser. Therefore, it is an adjective.",
+        },
+        {
+          id: 78,
+          question: "All spoke in his favour. Here the word 'All' is a/an-",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Pronoun",
+            d: "Adjective",
+          },
+          correct: "c",
+          explanation:
+            "In this sentence, 'All' refers to a group of people or things and functions as the subject of the verb 'spoke', standing in place of a noun. Therefore, it is an indefinite pronoun.",
+        },
+        {
+          id: 79,
+          question: "What parts of speech is the word 'Extraordinary'?",
+          options: {
+            a: "Noun",
+            b: "Verb",
+            c: "Adjective",
+            d: "Adverb",
+          },
+          correct: "c",
+          explanation:
+            "'Extraordinary' means very unusual or remarkable. It describes a quality, thus functioning as an adjective.",
+        },
+        {
+          id: 80,
+          question: "The word 'Homely' belongs to what part of speech?",
+          options: {
+            a: "Noun",
+            b: "Adjective",
+            c: "Verb",
+            d: "Adverb",
+          },
+          correct: "b",
+          explanation:
+            "'Homely' means simple but cozy and comfortable, as in one's own home, or (especially in British English) unattractive. It describes a quality, thus functioning as an adjective.",
+        },
+        {
+          id: 81,
+          question: "Which of the following underlined words is a verb?",
+          options: {
+            a: "I can _assure_ you.",
+            b: "He is dependent on me.",
+            c: "We stood silently.",
+            d: "It gave me trouble.",
+          },
+          correct: "a",
+          explanation:
+            "In sentence (a), 'assure' is an action word, meaning to tell someone something positively to remove doubt. Therefore, it is a verb.",
+        },
+        {
+          id: 82,
+          question:
+            "The word 'Still' is used as an adjective in which of the following sentences?",
+          options: {
+            a: "He heard a shrill cry in the still of night.",
+            b: "Mothers still their babies with a lulling song.",
+            c: "Mosquitoes lay eggs in still water.",
+            d: "He is still in idleness.",
+          },
+          correct: "c",
+          explanation:
+            "In sentence (c), 'still' modifies the noun 'water', describing its state (not moving). Therefore, it is used as an adjective. In (a), 'still' is part of a noun phrase ('the still of night'). In (b), 'still' is a verb. In (d), 'still' is an adverb.",
+        },
+        {
+          id: 83,
+          question: "He stood before me. The underlined word is _",
+          options: {
+            a: "Noun",
+            b: "Adverb",
+            c: "Verb",
+            d: "Preposition",
+          },
+          correct: "d",
+          explanation:
+            "The underlined word is 'before'. It indicates position relative to 'me' and introduces the pronoun 'me'. Therefore, it functions as a preposition.",
+        },
+        {
+          id: 84,
+          question:
+            'Identify the determiner in the sentence "Bring me that book".',
+          options: {
+            a: "bring",
+            b: "me",
+            c: "that",
+            d: "book",
+          },
+          correct: "c",
+          explanation:
+            "A determiner is a word that introduces a noun. In this sentence, 'that' specifies which book, functioning as a demonstrative determiner.",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
